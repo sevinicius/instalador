@@ -47,7 +47,7 @@ if [ "${DELEGAAI_SEM_CLAUDE:-}" = "1" ]; then
 elif tem claude; then
   ok "$(claude --version 2>/dev/null | head -1)"
 else
-  npm i -g @anthropic-ai/claude-code --no-audit --no-fund || falha 'não consegui instalar o Claude Code'
+  npm i -g @anthropic-ai/claude-code --no-audit --no-fund --loglevel=error || falha 'não consegui instalar o Claude Code'
   ok 'Claude Code instalado (na primeira vez, rode "claude" e faça o login)'
 fi
 
@@ -60,7 +60,7 @@ done
 ok "pacotes em $TMP"
 
 passo 'Engrama — memória do projeto'
-MENTE_SKIP_POSTINSTALL=1 npm i -g "$TMP/engrama.tgz" --no-audit --no-fund || falha 'não consegui instalar o Engrama'
+MENTE_SKIP_POSTINSTALL=1 npm i -g "$TMP/engrama.tgz" --no-audit --no-fund --loglevel=error || falha 'não consegui instalar o Engrama'
 engrama init --armazenamento=pglite --extensoes=esteira || falha 'não consegui preparar o banco da memória'
 engrama daemons up || falha 'não consegui ligar a memória'
 if [ "${DELEGAAI_SEM_AUTOSTART:-}" = "1" ]; then
@@ -75,7 +75,7 @@ engrama connect || aviso 'não consegui conectar alguma IA; rode "engrama connec
 ok 'memória no ar'
 
 passo 'DelegaAí'
-npm i -g "$TMP/delegaai.tgz" --no-audit --no-fund || falha 'não consegui instalar o DelegaAí'
+npm i -g "$TMP/delegaai.tgz" --no-audit --no-fund --loglevel=error || falha 'não consegui instalar o DelegaAí'
 ok "DelegaAí $(delegaai versao)"
 
 passo 'Conferindo'

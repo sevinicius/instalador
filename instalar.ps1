@@ -64,7 +64,7 @@ if ($env:DELEGAAI_SEM_CLAUDE -eq '1') {
 } elseif (Tem 'claude') {
   Ok ((claude --version) -join ' ')
 } else {
-  Rodar 'instalação do Claude Code' { npm i -g @anthropic-ai/claude-code --no-audit --no-fund | Out-Host }
+  Rodar 'instalação do Claude Code' { npm i -g @anthropic-ai/claude-code --no-audit --no-fund --loglevel=error | Out-Host }
   AtualizarPath
   Ok 'Claude Code instalado (na primeira vez, rode "claude" e faça o login)'
 }
@@ -82,7 +82,7 @@ Ok "pacotes em $tmp"
 # 5. Engrama (memória)
 Passo 'Engrama — memória do projeto'
 $env:MENTE_SKIP_POSTINSTALL = '1'
-Rodar 'instalação do Engrama' { npm i -g (Join-Path $tmp 'engrama.tgz') --no-audit --no-fund | Out-Host }
+Rodar 'instalação do Engrama' { npm i -g (Join-Path $tmp 'engrama.tgz') --no-audit --no-fund --loglevel=error | Out-Host }
 Remove-Item Env:MENTE_SKIP_POSTINSTALL -ErrorAction SilentlyContinue
 AtualizarPath
 Rodar 'preparação do banco da memória' { engrama init --armazenamento=pglite --extensoes=esteira | Out-Host }
@@ -105,7 +105,7 @@ Ok 'memória no ar'
 
 # 6. DelegaAí
 Passo 'DelegaAí'
-Rodar 'instalação do DelegaAí' { npm i -g (Join-Path $tmp 'delegaai.tgz') --no-audit --no-fund | Out-Host }
+Rodar 'instalação do DelegaAí' { npm i -g (Join-Path $tmp 'delegaai.tgz') --no-audit --no-fund --loglevel=error | Out-Host }
 AtualizarPath
 Ok ("DelegaAí " + ((delegaai versao) -join ''))
 

@@ -5,7 +5,8 @@
 # Opções por variável de ambiente (antes de rodar):
 #   DELEGAAI_INSTALADOR_URL   de onde baixar os pacotes (padrão: a última release de github.com/sevinicius/instalador)
 #   DELEGAAI_SEM_AUTOSTART=1  não registra a memória para ligar sozinha no login
-#   DELEGAAI_SEM_CLAUDE=1     não instala o Claude Code
+#   DELEGAAI_INSTALAR_IA=...  instala estas IAs (claude, codex, gemini, opencode; separadas por vírgula)
+#   DELEGAAI_SEM_CLAUDE=1     sem nenhuma IA na máquina, não instala o Claude Code
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -57,17 +58,32 @@ if (-not (Tem 'git')) {
 }
 Ok ((git --version) -join ' ')
 
-# 3. Claude Code
-Passo 'Claude Code'
-if ($env:DELEGAAI_SEM_CLAUDE -eq '1') {
-  Aviso 'pulado (DELEGAAI_SEM_CLAUDE=1)'
-} elseif (Tem 'claude') {
-  Ok ((claude --version) -join ' ')
-} else {
-  Rodar 'instalação do Claude Code' { npm i -g @anthropic-ai/claude-code --no-audit --no-fund --loglevel=error | Out-Host }
-  AtualizarPath
-  Ok 'Claude Code instalado (na primeira vez, rode "claude" e faça o login)'
+# 3. A IA da pessoa (Claude Code, Codex, Gemini CLI, OpenCode ou Cursor)
+Passo 'Sua IA (Claude Code, Codex, Gemini CLI, OpenCode ou Cursor)'
+$pacotesIa = @{ claude = '@anthropic-ai/claude-code'; codex = '@openai/codex'; gemini = '@google/gemini-cli'; opencode = 'opencode-ai' }
+if ($env:DELEGAAI_INSTALAR_IA) {
+  foreach ($ia in ($env:DELEGAAI_INSTALAR_IA -split ',') | ForEach-Object { $_.Trim().ToLower() } | Where-Object { $_ }) {
+    if (-not $pacotesIa.ContainsKey($ia)) { Aviso "IA desconhecida em DELEGAAI_INSTALAR_IA: $ia (use claude, codex, gemini ou opencode)"; continue }
+    if (Tem $ia) { Ok "$ia já instalado"; continue }
+    $pkg = $pacotesIa[$ia]
+    Rodar "instalação de $pkg" { npm i -g $pkg --no-audit --no-fund --loglevel=error | Out-Host }
+    AtualizarPath
+    Ok "$ia instalado (na primeira vez, abra e faça o login)"
+  }
 }
+$achadas = @('claude', 'codex', 'gemini', 'opencode', 'cursor') | Where-Object { Tem $_ }
+if (-not $achadas) {
+  if ($env:DELEGAAI_SEM_CLAUDE -eq '1') {
+    Aviso 'nenhuma IA encontrada; instale uma depois e rode "delegaai update" no projeto'
+  } else {
+    # nenhuma IA na máquina: o Claude Code é a que tem a integração mais completa
+    Rodar 'instalação do Claude Code' { npm i -g @anthropic-ai/claude-code --no-audit --no-fund --loglevel=error | Out-Host }
+    AtualizarPath
+    Ok 'Claude Code instalado (na primeira vez, rode "claude" e faça o login)'
+    $achadas = @('claude')
+  }
+}
+if ($achadas) { Ok ("IAs nesta máquina: " + ($achadas -join ', ')) }
 
 # 4. Pacotes
 Passo 'Baixando o Engrama e o DelegaAí'
@@ -95,9 +111,14 @@ if ($env:DELEGAAI_SEM_AUTOSTART -eq '1') {
 }
 # Claude Code recém-instalado só cria a pasta de config na 1ª execução; sem ela o "engrama connect" acha que não está
 # instalado. Criar a pasta vazia é o mesmo que o Claude Code faz.
-if (Tem 'claude') {
-  $dirClaude = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' }
-  if (-not (Test-Path $dirClaude)) { New-Item -ItemType Directory -Force -Path $dirClaude | Out-Null }
+$pastasIa = @{
+  claude = $(if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' })
+  codex = $(if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' })
+  gemini = (Join-Path $env:USERPROFILE '.gemini')
+  opencode = (Join-Path (Join-Path $env:USERPROFILE '.config') 'opencode')
+}
+foreach ($ia in $pastasIa.Keys) {
+  if ((Tem $ia) -and -not (Test-Path $pastasIa[$ia])) { New-Item -ItemType Directory -Force -Path $pastasIa[$ia] | Out-Null }
 }
 engrama connect | Out-Host
 if ($LASTEXITCODE -ne 0) { Aviso 'não consegui conectar alguma IA; rode "engrama connect" depois' }
@@ -118,6 +139,6 @@ Write-Host ''
 Write-Host 'Pronto. Para usar num projeto:' -ForegroundColor Green
 Write-Host '  1. cd <pasta do seu projeto>        (um repositório git)'
 Write-Host '  2. delegaai init'
-Write-Host '  3. abra o Claude Code nessa pasta (claude) e peça:  /delega <o que você quer>'
+Write-Host '  3. abra a sua IA nessa pasta e peça:  /delega <o que você quer>   (no Codex: $delega <o que você quer>)'
 Write-Host ''
 Write-Host 'Memória: painel em http://127.0.0.1:7474/painel  ·  ajuda: delegaai ajuda  ·  engrama help'

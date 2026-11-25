@@ -6,7 +6,8 @@
 # Opções por variável de ambiente:
 #   DELEGAAI_INSTALADOR_URL   de onde baixar os pacotes (padrão: a última release de github.com/sevinicius/instalador)
 #   DELEGAAI_SEM_AUTOSTART=1  não registra a memória para ligar sozinha
-#   DELEGAAI_SEM_CLAUDE=1     não instala o Claude Code
+#   DELEGAAI_INSTALAR_IA=...  instala estas IAs (claude, codex, gemini, opencode; separadas por vírgula)
+#   DELEGAAI_SEM_CLAUDE=1     sem nenhuma IA na máquina, não instala o Claude Code
 set -euo pipefail
 
 BASE="${DELEGAAI_INSTALADOR_URL:-https://github.com/sevinicius/instalador/releases/latest/download}"
@@ -41,15 +42,37 @@ if [ ! -w "$NPM_PREFIXO/lib" ] && [ ! -w "$NPM_PREFIXO" ]; then
   aviso "pacotes globais do npm em $NPM_PREFIXO — acrescente  export PATH=\"$NPM_PREFIXO/bin:\$PATH\"  ao seu ~/.bashrc ou ~/.zshrc"
 fi
 
-passo 'Claude Code'
-if [ "${DELEGAAI_SEM_CLAUDE:-}" = "1" ]; then
-  aviso 'pulado (DELEGAAI_SEM_CLAUDE=1)'
-elif tem claude; then
-  ok "$(claude --version 2>/dev/null | head -1)"
-else
-  npm i -g @anthropic-ai/claude-code --no-audit --no-fund --loglevel=error || falha 'não consegui instalar o Claude Code'
-  ok 'Claude Code instalado (na primeira vez, rode "claude" e faça o login)'
+passo 'Sua IA (Claude Code, Codex, Gemini CLI, OpenCode ou Cursor)'
+pacote_da_ia() {
+  case "$1" in
+    claude) echo '@anthropic-ai/claude-code' ;;
+    codex) echo '@openai/codex' ;;
+    gemini) echo '@google/gemini-cli' ;;
+    opencode) echo 'opencode-ai' ;;
+    *) echo '' ;;
+  esac
+}
+PEDIDAS="${DELEGAAI_INSTALAR_IA:-}"
+for ia in $(printf '%s' "$PEDIDAS" | tr ',' ' '); do
+  pkg="$(pacote_da_ia "$ia")"
+  if [ -z "$pkg" ]; then aviso "IA desconhecida em DELEGAAI_INSTALAR_IA: $ia (use claude, codex, gemini ou opencode)"; continue; fi
+  if tem "$ia"; then ok "$ia já instalado"; continue; fi
+  npm i -g "$pkg" --no-audit --no-fund --loglevel=error || falha "não consegui instalar $pkg"
+  ok "$ia instalado (na primeira vez, abra e faça o login)"
+done
+ACHADAS=''
+for ia in claude codex gemini opencode cursor; do tem "$ia" && ACHADAS="$ACHADAS $ia"; done
+if [ -z "$ACHADAS" ]; then
+  if [ "${DELEGAAI_SEM_CLAUDE:-}" = "1" ]; then
+    aviso 'nenhuma IA encontrada; instale uma depois e rode "delegaai update" no projeto'
+  else
+    # nenhuma IA na máquina: o Claude Code é a que tem a integração mais completa
+    npm i -g @anthropic-ai/claude-code --no-audit --no-fund --loglevel=error || falha 'não consegui instalar o Claude Code'
+    ok 'Claude Code instalado (na primeira vez, rode "claude" e faça o login)'
+    ACHADAS=' claude'
+  fi
 fi
+[ -n "$ACHADAS" ] && ok "IAs nesta máquina:$ACHADAS"
 
 passo 'Baixando o Engrama e o DelegaAí'
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/delegaai-instalador.XXXXXX")"
@@ -68,9 +91,12 @@ if [ "${DELEGAAI_SEM_AUTOSTART:-}" = "1" ]; then
 else
   engrama autostart install || aviso 'não consegui registrar o auto-start; ligue a memória com "engrama daemons up" depois de reiniciar'
 fi
-# Claude Code recém-instalado só cria a pasta de config na 1ª execução; sem ela o "engrama connect" acha que não está
-# instalado. Criar a pasta vazia é o mesmo que o Claude Code faz.
+# IA recém-instalada só cria a pasta de config na 1ª execução; sem ela o "engrama connect" acha que não está
+# instalada. Criar a pasta vazia é o mesmo que a IA faz.
 if tem claude; then mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; fi
+if tem codex; then mkdir -p "${CODEX_HOME:-$HOME/.codex}"; fi
+if tem gemini; then mkdir -p "$HOME/.gemini"; fi
+if tem opencode; then mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/opencode"; fi
 engrama connect || aviso 'não consegui conectar alguma IA; rode "engrama connect" depois'
 ok 'memória no ar'
 
@@ -84,5 +110,5 @@ delegaai doctor || true
 printf '\n\033[32mPronto. Para usar num projeto:\033[0m\n'
 printf '  1. cd <pasta do seu projeto>        (um repositório git)\n'
 printf '  2. delegaai init\n'
-printf '  3. abra o Claude Code nessa pasta (claude) e peça:  /delega <o que você quer>\n\n'
+printf '  3. abra a sua IA nessa pasta e peça:  /delega <o que você quer>   (no Codex: $delega <o que você quer>)\n\n'
 printf 'Memória: painel em http://127.0.0.1:7474/painel  ·  ajuda: delegaai ajuda  ·  engrama help\n'

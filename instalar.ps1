@@ -130,15 +130,19 @@ Rodar 'instalação do DelegaAí' { npm i -g (Join-Path $tmp 'delegaai.tgz') --n
 AtualizarPath
 Ok ("DelegaAí " + ((delegaai versao) -join ''))
 
-# 7. Conferência
+# 7. DelegaAí nas IAs (harness: skills, travas e instruções no nível do usuário)
+Passo 'DelegaAí nas suas IAs (skills, travas e instruções — vale para todos os projetos)'
+delegaai instalar | Out-Host
+if ($LASTEXITCODE -ne 0) { Aviso 'não consegui instalar o DelegaAí nas IAs; rode "delegaai instalar" depois' }
+
+# 8. Conferência
 Passo 'Conferindo'
 delegaai doctor | Out-Host
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 
 Write-Host ''
-Write-Host 'Pronto. Para usar num projeto:' -ForegroundColor Green
-Write-Host '  1. cd <pasta do seu projeto>        (um repositório git)'
-Write-Host '  2. delegaai init'
-Write-Host '  3. abra a sua IA nessa pasta e peça:  /delega <o que você quer>   (no Codex: $delega <o que você quer>)'
+Write-Host 'Pronto. Abra a sua IA em qualquer projeto (um repositório git) e peça o que quer, em linguagem normal:' -ForegroundColor Green
+Write-Host '  "adiciona filtro por status na lista de tarefas"  ·  "o login quebra com e-mail maiúsculo"'
+Write-Host '  A IA segue a esteira sozinha (plano, testes, revisão, PR). Atalhos: /delega, /corrige (no Codex: $delega).'
 Write-Host ''
 Write-Host 'Memória: painel em http://127.0.0.1:7474/painel  ·  ajuda: delegaai ajuda  ·  engrama help'

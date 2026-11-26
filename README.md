@@ -31,33 +31,33 @@ curl -fsSL https://github.com/sevinicius/instalador/releases/latest/download/ins
 2. Procura a sua IA (Claude Code, Codex, Gemini CLI, OpenCode, Cursor). Se não achar nenhuma, instala o Claude Code.
 3. Instala o **Engrama**, cria o banco da memória (embutido, sem Docker), liga e deixa ligando sozinho no login.
 4. Conecta o Engrama às IAs que encontrar.
-5. Instala o **DelegaAí** e confere tudo (`delegaai doctor`).
+5. Instala o **DelegaAí** e o coloca dentro das suas IAs (`delegaai instalar`): skills de modo de pensar (entender
+   antes, planejar e replanejar, TDD, depurar pela causa, conferir antes de entregar, revisar), sub-agentes, travas e
+   instruções sempre ativas — vale para **todos os projetos**, sem configurar nada em cada um.
+6. Confere tudo (`delegaai doctor`).
 
 Pode rodar de novo quando quiser: atualiza o que já está instalado e **nunca apaga a memória**.
 
 ## Depois de instalar
 
 1. Na primeira vez, abra a sua IA e faça o login nela.
-2. Em cada projeto (uma pasta com git):
-   ```bash
-   cd minha-pasta-do-projeto
-   delegaai init
-   ```
-   O `init` prepara o projeto para todas as IAs instaladas na máquina (ou só as que você escolher:
-   `delegaai init --ias codex,gemini`).
-3. Abra a sua IA nessa pasta e peça:
+2. Abra a IA em qualquer projeto (uma pasta com git) e peça o que quer, **em linguagem normal**:
 
-   | IA | Como pedir |
-   |---|---|
-   | Claude Code, Gemini CLI, Cursor, OpenCode | `/delega adicionar filtro por status na lista de tarefas` |
-   | Codex | `$delega adicionar filtro por status na lista de tarefas` |
+   > adiciona filtro por status na lista de tarefas
+   >
+   > o login quebra quando o e-mail tem letra maiúscula
 
-   Na primeira vez, o Codex pede para marcar o projeto como confiável e aprovar os hooks do DelegaAí (`/hooks`), e
-   o Gemini mostra os hooks novos do projeto: aceite os `delegaai-*`. No Cursor, deixe ligado *Include Third-Party
-   Plugins, Skills, and Other Configs* (Settings).
+   A IA segue a esteira sozinha: consulta a memória, planeja, escreve o teste antes do código, implementa, revisa e
+   abre o PR. No primeiro pedido, o projeto se prepara sozinho (cria a pasta `.delegaai/`). Pergunta ("como funciona
+   o frete?") ela só responde; ajuste de texto ela faz direto.
 
-Comandos úteis: `delegaai doctor` (confere tudo), `delegaai ajuda`, `engrama daemons status` (a memória está ligada?),
-painel da memória em <http://127.0.0.1:7474/painel>.
+   Atalhos, se quiser: `/delega <pedido>` e `/corrige <bug>` (no Codex: `$delega`, `$corrige`).
+
+   Na primeira vez, o Codex pede para aprovar os hooks do DelegaAí (`/hooks`). No Cursor, deixe ligado *Include
+   Third-Party Plugins, Skills, and Other Configs* (Settings).
+
+Comandos úteis: `delegaai doctor` (confere tudo), `delegaai pausar` / `retomar` (desliga a esteira num projeto),
+`delegaai ajuda`, `engrama daemons status` (a memória está ligada?), painel da memória em <http://127.0.0.1:7474/painel>.
 
 ## Opções do instalador
 
@@ -84,11 +84,11 @@ Exemplo (macOS/Linux, instalando junto o Codex):
 ## Desinstalar
 
 ```bash
+delegaai desinstalar    # tira o DelegaAí das IAs (skills, travas, instruções); o que você alterou fica
 engrama disconnect      # tira o Engrama das IAs
 engrama autostart uninstall
 engrama daemons down
 npm uninstall -g engrama @sevinicius/delegaai
-# em cada projeto, para tirar os arquivos das outras IAs: delegaai update --ias claude
 ```
 
 A memória fica em `~/.ia-mente` (apague a pasta só se quiser perder tudo).

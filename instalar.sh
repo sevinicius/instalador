@@ -104,11 +104,13 @@ passo 'DelegaAí'
 npm i -g "$TMP/delegaai.tgz" --no-audit --no-fund --loglevel=error || falha 'não consegui instalar o DelegaAí'
 ok "DelegaAí $(delegaai versao)"
 
+passo 'DelegaAí nas suas IAs (skills, travas e instruções — vale para todos os projetos)'
+delegaai instalar || aviso 'não consegui instalar o DelegaAí nas IAs; rode "delegaai instalar" depois'
+
 passo 'Conferindo'
 delegaai doctor || true
 
-printf '\n\033[32mPronto. Para usar num projeto:\033[0m\n'
-printf '  1. cd <pasta do seu projeto>        (um repositório git)\n'
-printf '  2. delegaai init\n'
-printf '  3. abra a sua IA nessa pasta e peça:  /delega <o que você quer>   (no Codex: $delega <o que você quer>)\n\n'
+printf '\n\033[32mPronto. Abra a sua IA em qualquer projeto (um repositório git) e peça o que quer, em linguagem normal:\033[0m\n'
+printf '  "adiciona filtro por status na lista de tarefas"  ·  "o login quebra com e-mail maiúsculo"\n'
+printf '  A IA segue a esteira sozinha (plano, testes, revisão, PR). Atalhos: /delega, /corrige (no Codex: $delega).\n\n'
 printf 'Memória: painel em http://127.0.0.1:7474/painel  ·  ajuda: delegaai ajuda  ·  engrama help\n'
